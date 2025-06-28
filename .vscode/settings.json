@@ -91,5 +91,6 @@
         "stack": "cpp",
         "cstdbool": "cpp",
         "version": "cpp"
-    }
+    },
+    "cmake.sourceDirectory": "/home/evanee/Documents/mygit/my_turtle/src/my_ros_tutorials/my_turtlesim"
 }
