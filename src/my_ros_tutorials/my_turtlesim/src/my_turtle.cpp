@@ -590,10 +590,6 @@ bool Turtle::update(
 
 
 
-
-
-
-
       if(ang_vel_>0.2)
       {
         cnt2++;
