@@ -302,7 +302,7 @@ void Turtle::walkAbsoluteAcceptCallback(
 void Turtle::rotateImage()
 {
   QTransform transform;
-  transform.rotate(-orient_ * 180.0 / PI + 90.0);
+  transform.rotate(+orient_ * 180.0 / PI + 90.0);
   turtle_rotated_image_ = turtle_image_.transformed(transform);
 }
 
@@ -324,6 +324,16 @@ bool Turtle::update(
   bool modified = false;
   qreal old_orient = orient_;
   syn_agv_para();
+
+  //测试出结果，正常坐标系，点在直线高角度一侧，返回值为负
+  // double tmp;
+  // tmp=pointToLineSignedDistance(QPointF(300,200),500,500,30);
+  // RCLCPP_INFO(nh_->get_logger(), "tmp = %f", tmp);
+  // tmp=pointToLineSignedDistance(QPointF(200,500),500,500,30);
+  // RCLCPP_INFO(nh_->get_logger(), "tmp = %f", tmp);
+
+
+
 // first process any teleportation requests, in order
   V_TeleportRequest::iterator it = teleport_requests_.begin();
   V_TeleportRequest::iterator end = teleport_requests_.end();
@@ -405,25 +415,25 @@ bool Turtle::update(
       lin_vel_y_ = 0.0;
       ang_vel_ = 0.0;
     } else {
+
+
+//麦轮形式的闭环
+/*
       auto goal = server_walk_absolute_goal_handle_->get_goal();
       double dx = goal->x - pos_.x();
       double dy = goal->y - pos_.y();
       double dist = std::sqrt(dx * dx + dy * dy);
-      double target_angle = std::atan2(-dy, dx); // 注意Qt坐标系y轴向下
+      double target_angle = std::atan2(-dy, dx); 
       double angle_to_target = normalizeAngle(target_angle - orient_);
 
-      // 角度转弧度
       double goal_theta_rad = goal->theta * M_PI / 180.0;
       double theta_error = normalizeAngle(goal_theta_rad - orient_);
 
-
-      // 线速度pid计算
       double v = (dist >= 1) ? goal->vel*20.0 : dist*goal->vel*20.0;
       goal_vel=goal->vel;
 
-      // 将速度投影到全局坐标系，
       lin_vel_x_ = v * std::cos(angle_to_target);
-      lin_vel_y_ = v * std::sin(angle_to_target); // Qt坐标系y轴向下
+      lin_vel_y_ = v * std::sin(angle_to_target); 
 
       if (goal->walk0_rote1==1)
       {
@@ -444,12 +454,165 @@ bool Turtle::update(
         ang_vel_ = theta_error *ang_p;
       }
 
+*/
+//////////////////////////////////////////////////////////////////////////////////////////
+
+      int cnt2=0;
+      double pos_x,pos_y,pos_theta;
+      pos_x=pos_.x();
+      pos_y=pos_.y();
+      pos_theta=orient_/M_PI*180.0;
+      if (false)
+      {
+        cnt2++;
+        RCLCPP_INFO(nh_->get_logger(), "%f,%f,%f", pos_x,pos_y,pos_theta);
+      }
+
+      auto goal = server_walk_absolute_goal_handle_->get_goal();
+      double dx = goal->x - pos_.x();
+      double dy = goal->y - pos_.y();
+      double dist = std::sqrt(dx * dx + dy * dy);
+      double target_angle = std::atan2(dy, dx); 
+      double goal_theta_rad = goal->theta * M_PI / 180.0;
+
+      double angle_end_to_target ;
+      double dist_project;
+      double dist_project_limit;
+      double v;
+      double orient_deg;
+      double end_to_orient;
+      double df;
+      double db;
+
+      double v_is_pos;
+      double ang_ft;
+      double ang_bt;
+
+      double angm_to_orient;
+
+
+
+
+      if (goal->x1_y2_rote3==2)
+      {
+
+         angle_end_to_target = normalizeAngle(target_angle - goal_theta_rad);
+         dist_project = dist * std::cos(angle_end_to_target); // 计算目标点到直线的投影距离
+         dist_project_limit=mylimit(dist_project,-10,10); //大于0意味着正向正确
+         v=goal->vel*4.0*dist_project_limit;
+
+         orient_deg = orient_ / M_PI * 180.0;
+         end_to_orient = orient_deg- goal->theta;
+
+        
+         df=pointToLineSignedDistance(point_f,goal->x,goal->y,goal->theta);
+         db=pointToLineSignedDistance(point_b,goal->x,goal->y,goal->theta);
+
+
+
+          if(abs(angle_end_to_target)<PI/3.0)
+          {
+            v_is_pos=1.0;
+          }
+          else if((PI-abs(angle_end_to_target))<PI/3.0)
+          {
+            v_is_pos=-1.0;
+          }
+          else
+          {
+            RCLCPP_ERROR(nh_->get_logger(), "[%s] 目标角度与车体角度差不在范围以内1", real_name.c_str());
+          }
+        
+
+         ang_ft=-df*45.0*v_is_pos;  
+         ang_bt=-db*45.0*v_is_pos;  
+
+        ang_f=mylimit(ang_ft+end_to_orient,-45,45);//补充车体相对目的曲线转角
+        ang_b=mylimit(ang_bt+end_to_orient,-45,45);
+        
+        calc_ang(ang_f,ang_b,HH,0,0,&ang_m,&now_R);
+
+        angm_to_orient = (orient_deg- ang_m);
+        lin_vel_x_=v* cos(angm_to_orient/180.0*PI);
+        lin_vel_y_=v* sin(angm_to_orient/180.0*PI);
+        ang_vel_=-v/now_R;
+      }
+
+
+      else if (goal->x1_y2_rote3==1)
+      {
+
+        
+        angle_end_to_target = normalizeAngle(target_angle - (goal_theta_rad+PI/2.0));
+        dist_project = dist * std::cos(angle_end_to_target); // 计算目标点到直线的投影距离
+        dist_project_limit=mylimit(dist_project,-10,10); //大于0意味着正向正确
+        v=-goal->vel*4.0*dist_project_limit;
+
+        
+        orient_deg = orient_ / M_PI * 180.0+90.0;
+        end_to_orient = orient_deg- (goal->theta+90);
+
+        df=pointToLineSignedDistance(point_r,goal->x,goal->y,goal->theta+90);
+        db=pointToLineSignedDistance(point_l,goal->x,goal->y,goal->theta+90);
+
+
+        if(abs(angle_end_to_target)<PI/3.0)
+        {
+          v_is_pos=1.0;
+        }
+        else if((PI-abs(angle_end_to_target))<PI/3.0)
+        {
+          v_is_pos=-1.0;
+        }
+        else
+        {
+          RCLCPP_ERROR(nh_->get_logger(), "[%s] 目标角度与车体角度差不在范围以内", real_name.c_str());
+        }
+
+
+
+        ang_ft=-df*45.0*v_is_pos;  
+        ang_bt=-db*45.0*v_is_pos;  
+
+        ang_f=mylimit(ang_ft+end_to_orient,-45,45);//补充车体相对目的曲线转角
+        ang_b=mylimit(ang_bt+end_to_orient,-45,45);
+        
+        calc_ang(ang_f,ang_b,HH,0,0,&ang_m,&now_R);
+
+        angm_to_orient = (orient_deg+90- ang_m);
+        lin_vel_y_=v* cos(angm_to_orient/180.0*PI);
+        lin_vel_x_=-v* sin(angm_to_orient/180.0*PI);
+        ang_vel_=v/now_R;
+      }
+
+
+
+
+
+
+
+
+
+
+      if(ang_vel_>0.2)
+      {
+        cnt2++;
+      }
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+      double theta_error = normalizeAngle(goal_theta_rad - orient_);
+
       // 发布反馈
+
       server_walk_absolute_feedback_->remaining = dist;
       server_walk_absolute_goal_handle_->publish_feedback(server_walk_absolute_feedback_);
 
       // 三个条件都满足才算完成
-      bool dist_ok = ((dist < 0.01)&& (goal->walk0_rote1==0)) || (goal->walk0_rote1==1);
+      bool dist_ok = ((dist < 0.01)&& (goal->x1_y2_rote3==1 || goal->x1_y2_rote3==2)) || (goal->x1_y2_rote3==3);
       if (dist_ok && std::abs(theta_error) < 0.001) {
         RCLCPP_INFO(nh_->get_logger(), "[%s] ros action server消息: 绝对值走位目标完成", real_name.c_str());
         server_walk_absolute_result_->delta = dist;
@@ -477,10 +640,14 @@ bool Turtle::update(
   orient_ = orient_ + ang_vel_ * dt;
   // Keep orient_ between -pi and +pi
   orient_ = normalizeAngle(orient_);
-  pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt -
-    std::sin(orient_) * lin_vel_y_ * dt;
-  pos_.ry() -= std::cos(orient_) * lin_vel_y_ * dt +
-    std::sin(orient_) * lin_vel_x_ * dt;
+  //pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt - std::sin(orient_) * lin_vel_y_ * dt;
+  //pos_.ry() -= std::cos(orient_) * lin_vel_y_ * dt + std::sin(orient_) * lin_vel_x_ * dt;
+
+  //pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt + std::sin(orient_) * lin_vel_y_ * dt;
+  //pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt + std::sin(orient_) * lin_vel_x_ * dt;
+
+  pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt;
+  pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt;
 
 
   db51_tcp_.Rx_Agv.heartbeat++;

@@ -1,5 +1,5 @@
 # The desired heading in radians
-int32 walk0_rote1
+int32 x1_y2_rote3
 float32 x
 float32 y
 float32 theta

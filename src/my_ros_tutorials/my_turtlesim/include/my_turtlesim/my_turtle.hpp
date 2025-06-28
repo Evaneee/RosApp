@@ -82,6 +82,12 @@ public:
   void process_modbus_requests();
   void init_modbus();
 
+  static double pointToLineSignedDistance(
+    const QPointF& point,
+    double goal_x,
+    double goal_y,
+    double goal_theta_deg);
+
   rclcpp::Logger getLogger() const { return nh_->get_logger(); }
   QPointF getPos() const { return pos_; }
   qreal getOrient() const { return orient_; }
@@ -96,8 +102,13 @@ public:
   QPointF point_f;
   QPointF point_b;
 
+  QPointF point_l;
+  QPointF point_r;
+
   double ang_f;
   double ang_b;
+  double ang_m;
+  double now_R;
 
 
 private:

@@ -276,11 +276,19 @@ void calc_line_endpoints(const QPointF& pos_mid, double orient_mid, double HH_in
     if (point_b_ot) *point_b_ot = QPointF(pos_mid.x() - dx, pos_mid.y() - dy);
 }
 
-inline double mylimit(double ori_val, double min_val, double max_val) {
+double mylimit(double ori_val, double min_val, double max_val) {
     if (ori_val > max_val) return max_val;
     if (ori_val < min_val) return min_val;
     return ori_val;
 }
+
+double get_val_sign(double val_in)
+{
+    if (val_in > 0.0) return 1.0;
+    if (val_in < 0.0) return -1.0;
+    return 0.0;
+}
+
 
 
 void Turtle::syn_agv_para()
@@ -289,10 +297,26 @@ void Turtle::syn_agv_para()
     this->ang_b = mylimit(this->ang_b, -45, 45);
 
     calc_line_endpoints(this->pos_, this->orient_, this->HH, &this->point_f, &this->point_b);
-
+    calc_line_endpoints(this->pos_, this->orient_+PI/2.0, this->HH, &this->point_r, &this->point_l);
 }
 
-
+double Turtle::pointToLineSignedDistance(
+    const QPointF& point,
+    double goal_x,
+    double goal_y,
+    double goal_theta_deg)
+{
+    // 角度转弧度
+    double theta_rad = goal_theta_deg * M_PI / 180.0;
+    // 直线法向量
+    double nx = -sin(theta_rad);
+    double ny = cos(theta_rad);
+    // 点到直线上点的向量
+    double dx = point.x() - goal_x;
+    double dy = point.y() - goal_y;
+    // 有符号距离
+    return -(dx * nx + dy * ny);
+}
 
 
 

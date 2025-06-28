@@ -4,6 +4,8 @@
 #include <modbus/modbus.h>
 #include <cstdint>
 #include <string>
+#include <QPointF>
+#include <QtGlobal> // 提供qreal定义
 
 namespace my_turtlesim {
 
@@ -222,12 +224,12 @@ double* ot_degree,
 double* ot_r
 );
 void calc_line_endpoints(const QPointF& pos_mid, qreal orient_mid, qreal HH_in, QPointF* point_f_ot, QPointF* point_b_ot);
-inline double mylimit(double ori_val,  double min_val, double max_val) ;
+double mylimit(double ori_val,  double min_val, double max_val) ;
 
 
 
 
-
+double get_val_sign(double val_in);
 
 
 

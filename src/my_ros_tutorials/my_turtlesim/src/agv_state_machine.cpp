@@ -301,7 +301,7 @@ void Turtle::agv_state_machine()
             if (!db50_agv_.Excute.Rotation_Start && !client_walk_absolute_goal_handle_) 
             {
                 auto goal_msg = my_turtlesim_msgs::action::WalkAbsolute::Goal();
-                goal_msg.walk0_rote1 = 1; // 1表示旋转
+                goal_msg.x1_y2_rote3 = 3; // 3表示旋转
                 goal_msg.x = db50_agv_.Node_SP.X;
                 goal_msg.y = db50_agv_.Node_SP.Y;
                 goal_msg.theta = db50_agv_.Node_SP.Rz;
@@ -413,7 +413,17 @@ void Turtle::agv_state_machine()
                 if (!db50_agv_.Excute.MoveL_H_Start && !db50_agv_.Excute.MoveL_V_Start && !client_walk_absolute_goal_handle_) 
                 {
                     auto goal_msg = my_turtlesim_msgs::action::WalkAbsolute::Goal();
-                    goal_msg.walk0_rote1 = 0; // 0表示直行
+
+                    if(db50_agv_.Status.Mov_Fwd || db50_agv_.Status.Mov_Bwd)
+                    {
+                        goal_msg.x1_y2_rote3 = 2; // 2表示直行
+                    }
+                    else
+                    {
+                        goal_msg.x1_y2_rote3 = 1;
+                    }
+
+                    
                     goal_msg.x = db50_agv_.Node_SP.X;
                     goal_msg.y = db50_agv_.Node_SP.Y;
                     goal_msg.theta = db50_agv_.Node_SP.Rz;
@@ -442,7 +452,7 @@ void Turtle::agv_state_machine()
                             client_walk_absolute_goal_handle_ = nullptr;
                         }
                     };
-                    RCLCPP_INFO(nh_->get_logger(), "[%s] step30: 发布ros绝对值定位action(x=%0.2f,y=%0.2f,a=%0.2f,v=%0.2f)", real_name.c_str(),goal_msg.x,goal_msg.y,goal_msg.theta,goal_msg.vel);
+                    RCLCPP_INFO(nh_->get_logger(), "[%s] step30: 发布ros绝对值定位action(x=%0.2f,y=%0.2f,a=%0.2f,v=%0.2f,p=%d)", real_name.c_str(),goal_msg.x,goal_msg.y,goal_msg.theta,goal_msg.vel, goal_msg.x1_y2_rote3 );
                     client_walk_absolute_goal_handle_future_ = walk_absolute_action_client_->async_send_goal(goal_msg, send_goal_options);
 
                     // 标记开始直行
