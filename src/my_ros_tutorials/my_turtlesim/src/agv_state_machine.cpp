@@ -25,7 +25,15 @@ void Turtle::agv_state_machine()
     //程序16：AGV运行启动
     //Agv_Start 在进入step0之前根据条件保持一个周期true，进入step0以后都是false，直到执行到step100的下一個周期
     db50_agv_.Sys.Agv_Start =   (!db50_agv_.Sys.Agv_Run_Proc) &&
+                                (db51_tcp_.Tx_Agv.General.reserve1 > 0) && 
                                 (db51_tcp_.Tx_Agv.General.nodenum > 0);
+
+    if(db51_tcp_.Tx_Agv.General.reserve1> 0)
+    {
+        db51_tcp_.Tx_Agv.General.reserve1= 0; 
+        modbus_mapping_->tab_registers[40]=0;
+    }
+
 
 
     if(db51_tcp_.Tx_Agv.General.nodenum > 0)
