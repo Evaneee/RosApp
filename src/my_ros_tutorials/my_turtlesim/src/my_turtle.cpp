@@ -324,9 +324,7 @@ bool Turtle::update(
   bool modified = false;
   qreal old_orient = orient_;
   syn_agv_para();
-
-
-  // first process any teleportation requests, in order
+// first process any teleportation requests, in order
   V_TeleportRequest::iterator it = teleport_requests_.begin();
   V_TeleportRequest::iterator end = teleport_requests_.end();
   for (; it != end; ++it) {
