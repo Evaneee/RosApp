@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+
+
+
+    "configurations": [
+        {
+            "name": "ROS2 Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/evanee/Documents/mygit/my_turtle/install/my_turtlesim/lib/my_turtlesim/my_turtlesim_node",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                { "name": "AMENT_PREFIX_PATH", "value": "/home/evanee/Documents/mygit/my_turtle/install:/opt/ros/humble" },
+                { "name": "LD_LIBRARY_PATH", "value": "/home/evanee/Documents/mygit/my_turtle/install/my_turtlesim/lib:/opt/ros/humble/lib" },
+                { "name": "PYTHONPATH", "value": "/home/evanee/Documents/mygit/my_turtle/install/my_turtlesim/lib/python3.10/site-packages" }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

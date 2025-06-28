@@ -1,0 +1,12 @@
+# The desired heading in radians
+int32 walk0_rote1
+float32 x
+float32 y
+float32 theta
+float32 vel
+---
+# The angular displacement in radians to the starting position
+float32 delta
+---
+# The remaining rotation in radians
+float32 remaining
