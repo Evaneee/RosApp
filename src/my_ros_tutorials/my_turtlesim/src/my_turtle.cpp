@@ -323,9 +323,6 @@ bool Turtle::update(
 
   bool modified = false;
   qreal old_orient = orient_;
-
-
-
   syn_agv_para();
 
 
