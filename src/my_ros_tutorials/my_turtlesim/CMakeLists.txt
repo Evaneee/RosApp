@@ -55,6 +55,7 @@ add_executable(my_turtlesim_node
 
 target_include_directories(my_turtlesim_node PRIVATE
   ${LIBMODBUS_INCLUDE_DIRS}
+  $<BUILD_INTERFACE:${my_turtlesim_msgs_DIR}/../../../include>
 )
 
 target_link_libraries(my_turtlesim_node PRIVATE
