@@ -38,6 +38,10 @@ else()
   qt5_wrap_cpp(my_turtlesim_node_MOCS include/my_turtlesim/my_turtle_frame.hpp)
 endif()
 
+
+
+
+
 add_library(MocHeaders INTERFACE)
 target_include_directories(MocHeaders INTERFACE
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -55,7 +59,6 @@ add_executable(my_turtlesim_node
 
 target_include_directories(my_turtlesim_node PRIVATE
   ${LIBMODBUS_INCLUDE_DIRS}
-  $<BUILD_INTERFACE:${my_turtlesim_msgs_DIR}/../../../include>
 )
 
 target_link_libraries(my_turtlesim_node PRIVATE

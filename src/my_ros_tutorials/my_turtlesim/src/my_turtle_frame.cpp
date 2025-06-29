@@ -16,8 +16,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
 
-#include "my_turtlesim_msgs/srv/kill.hpp"
-#include "my_turtlesim_msgs/srv/spawn.hpp"
+//#include "my_turtlesim_msgs/srv/kill.hpp"
+#include "my_turtlesim_msgs/msg/spawn_request.hpp"
 
 #define DEFAULT_BG_R 0x45
 #define DEFAULT_BG_G 0x56

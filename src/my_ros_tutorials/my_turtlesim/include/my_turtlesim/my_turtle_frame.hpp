@@ -50,8 +50,8 @@
 
 #include <rcl_interfaces/msg/parameter_event.hpp>
 #include <std_srvs/srv/empty.hpp>
-#include <my_turtlesim_msgs/srv/spawn.hpp>
-#include <my_turtlesim_msgs/srv/kill.hpp>
+#include <my_turtlesim_msgs/msg/spawn_request.hpp>
+//#include <my_turtlesim_msgs/srv/kill.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <my_turtlesim_msgs/msg/spawn_request.hpp>
 
@@ -97,12 +97,12 @@ private:
   bool resetCallback(
     const std_srvs::srv::Empty::Request::SharedPtr,
     std_srvs::srv::Empty::Response::SharedPtr);
-  void spawnCallback(
-    const my_turtlesim_msgs::srv::Spawn::Request::SharedPtr,
-    my_turtlesim_msgs::srv::Spawn::Response::SharedPtr);
-  void killCallback(
-    const my_turtlesim_msgs::srv::Kill::Request::SharedPtr,
-    my_turtlesim_msgs::srv::Kill::Response::SharedPtr);
+  // void spawnCallback(
+  //   const my_turtlesim_msgs::srv::Spawn::Requcest::SharedPtr,
+  //   my_turtlesim_msgs::srv::Spawn::Response::SharedPtr);
+  // void killCallback(
+  //   const my_turtlesim_msgs::srv::Kill::Request::SharedPtr,
+  //   my_turtlesim_msgs::srv::Kill::Response::SharedPtr);
 
 
   void parameterEventCallback(const rcl_interfaces::msg::ParameterEvent::ConstSharedPtr);
@@ -123,8 +123,8 @@ private:
 
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr clear_srv_;
   rclcpp::Service<std_srvs::srv::Empty>::SharedPtr reset_srv_;
-  rclcpp::Service<my_turtlesim_msgs::srv::Spawn>::SharedPtr spawn_srv_;
-  rclcpp::Service<my_turtlesim_msgs::srv::Kill>::SharedPtr kill_srv_;
+  // rclcpp::Service<my_turtlesim_msgs::srv::Spawn>::SharedPtr spawn_srv_;
+  // rclcpp::Service<my_turtlesim_msgs::srv::Kill>::SharedPtr kill_srv_;
   rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
 
   rclcpp::Subscription<std_msgs::msg::String>::SharedPtr kill_sub_; // 新增，kill话题订阅
