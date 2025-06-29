@@ -327,7 +327,7 @@ void Turtle::agv_state_machine()
                     } 
                     else 
                     {
-                        RCLCPP_WARN(nh_->get_logger(), "[%s] --step25: 状态机收到action执行结果: walk_absolute action 原地回转执行失败或者取消", real_name.c_str());
+                        RCLCPP_ERROR(nh_->get_logger(), "[%s] --step25: 状态机收到action执行结果: walk_absolute action 原地回转执行失败或者取消", real_name.c_str());
                         db50_agv_.Excute.Rotation_Start = false;
                         db50_agv_.Error[4] = true;
                         db50_agv_.Int_Step = 100;
@@ -336,7 +336,8 @@ void Turtle::agv_state_machine()
                     }
                 };
                 // 发送action，并保存client_walk_absolute_goal_handle_future_
-                RCLCPP_INFO(nh_->get_logger(), "[%s] step25: 发布ros旋转action(x=%f,y=%f,a=%f)", real_name.c_str(),goal_msg.x,goal_msg.y,goal_msg.theta);
+                RCLCPP_INFO(nh_->get_logger(), "[%s] step30: 发布ros旋转action(x=%0.2f,y=%0.2f,a=%0.2f,v=%0.2f,x1y2r3=%d)", real_name.c_str(),goal_msg.x,goal_msg.y,goal_msg.theta,goal_msg.vel, goal_msg.x1_y2_rote3 );
+                   
                 client_walk_absolute_goal_handle_future_ = walk_absolute_action_client_->async_send_goal(goal_msg,send_goal_options);
                 db50_agv_.Excute.Rotation_Start = true;
             }
@@ -451,7 +452,7 @@ void Turtle::agv_state_machine()
                         } 
                         else 
                         {
-                            RCLCPP_WARN(nh_->get_logger(), "[%s] --step30: 状态机收到action执行结果: wwalk_absolute action 绝对值定位失败或者取消", real_name.c_str());
+                            RCLCPP_ERROR(nh_->get_logger(), "[%s] --step30: 状态机收到action执行结果: walk_absolute action 绝对值定位失败或者取消", real_name.c_str());
                             db50_agv_.Excute.MoveL_H_Start = false;
                             db50_agv_.Excute.MoveL_V_Start = false;
                             db50_agv_.Error[5] = true;
@@ -460,7 +461,7 @@ void Turtle::agv_state_machine()
                             client_walk_absolute_goal_handle_ = nullptr;
                         }
                     };
-                    RCLCPP_INFO(nh_->get_logger(), "[%s] step30: 发布ros绝对值定位action(x=%0.2f,y=%0.2f,a=%0.2f,v=%0.2f,p=%d)", real_name.c_str(),goal_msg.x,goal_msg.y,goal_msg.theta,goal_msg.vel, goal_msg.x1_y2_rote3 );
+                    RCLCPP_INFO(nh_->get_logger(), "[%s] step30: 发布ros绝对值定位action(x=%0.2f,y=%0.2f,a=%0.2f,v=%0.2f,x1y2r3=%d)", real_name.c_str(),goal_msg.x,goal_msg.y,goal_msg.theta,goal_msg.vel, goal_msg.x1_y2_rote3 );
                     client_walk_absolute_goal_handle_future_ = walk_absolute_action_client_->async_send_goal(goal_msg, send_goal_options);
 
                     // 标记开始直行
