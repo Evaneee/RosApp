@@ -477,6 +477,7 @@ bool Turtle::update(
       double target_angle = std::atan2(dy, dx); 
       double goal_theta_rad = goal->theta * M_PI / 180.0;
       double theta_error = normalizeAngle(goal_theta_rad - orient_);
+      goal_vel=goal->vel;
 
       double angle_end_to_target ;
       double dist_project;

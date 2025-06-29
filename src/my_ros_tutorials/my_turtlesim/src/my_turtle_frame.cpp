@@ -7,6 +7,8 @@
 #include <ctime>
 #include <functional>
 #include <string>
+#include <QApplication>    // 新增
+#include <QPalette>        // 新增
 
 #include "rcl_interfaces/msg/integer_range.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
@@ -82,6 +84,21 @@ TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent
 
   local_id = get_local_id_from_ip(); 
   setWindowTitle("乌龟控制");
+
+
+
+    // —— 在这里加入 —— 
+  setAutoFillBackground(true);
+  {
+    QPalette pal = palette();
+    // 使用系统控件背景色，也可以改成 QPalette::Window
+    //pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::button));
+
+    pal.setColor(QPalette::Window, QColor(180, 180, 180));
+    setPalette(pal);
+  }
+  // —— 加入结束 —— 
+
 
   srand(time(NULL));
 
@@ -379,14 +396,14 @@ void TurtleFrame::paintEvent(QPaintEvent * event)
   (void)event;  // NO LINT
   QPainter painter(this);
 
-  int r = DEFAULT_BG_R;
-  int g = DEFAULT_BG_G;
-  int b = DEFAULT_BG_B;
-  nh_->get_parameter("background_r", r);
-  nh_->get_parameter("background_g", g);
-  nh_->get_parameter("background_b", b);
-  QRgb background_color = qRgb(r, g, b);
-  painter.fillRect(0, 0, width(), height(), background_color);
+  // int r = DEFAULT_BG_R;
+  // int g = DEFAULT_BG_G;
+  // int b = DEFAULT_BG_B;
+  // nh_->get_parameter("background_r", r);
+  // nh_->get_parameter("background_g", g);
+  // nh_->get_parameter("background_b", b);
+  // QRgb background_color = qRgb(r, g, b);
+  // painter.fillRect(0, 0, width(), height(), background_color);
 
   //修改去除路径显示
   //painter.drawImage(QPoint(0, 0), path_image_);
