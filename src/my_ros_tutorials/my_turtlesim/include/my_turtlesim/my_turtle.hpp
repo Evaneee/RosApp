@@ -51,6 +51,7 @@
 #include <QPainter>
 #include <QPen>
 #include <QPointF>
+#include <QElapsedTimer>
 
 #include <memory>
 #include <string>
@@ -81,6 +82,7 @@ public:
 
   void process_modbus_requests();
   void init_modbus();
+  void setOrient(double angle);
 
   static double pointToLineSignedDistance(
     const QPointF& point,
@@ -110,10 +112,17 @@ public:
   double ang_m;
   double now_R;
 
+  double goal_x_ = 0;
+  double goal_y_ = 0;
+  double goal_theta_ = 0;
+
+
+public:
+    void setPos(double x, double y) { pos_.setX(x); pos_.setY(y); }
+    bool highlight_error_ = false;
+
 
 private:
-
-
   modbus_t* modbus_ctx_ = nullptr;
   modbus_mapping_t* modbus_mapping_ = nullptr;
   int modbus_server_socket_fd_ = -1;
@@ -143,6 +152,7 @@ private:
   void rotateImage();
 
 
+  QElapsedTimer error_timer_;
 
   rclcpp::Node::SharedPtr nh_;
   std::string real_name; // 新增：保存乌龟名字
@@ -158,8 +168,6 @@ private:
   qreal ang_vel_;
   bool pen_on_;
   QPen pen_;
-
- 
 
 
 

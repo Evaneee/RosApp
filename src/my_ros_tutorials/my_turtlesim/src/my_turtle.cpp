@@ -34,12 +34,61 @@ namespace my_turtlesim
 {
 
 
+  QPointF alignPixel(const QPointF& p) {
+    return QPointF(std::round(p.x()) + 0.5, std::round(p.y()) + 0.5);
+}
+// 使用时 painter.drawLine(alignPixel(a), alignPixel(b));
+
 //被frame调用，，void TurtleFrame::paintEvent(QPaintEvent * event)
 void Turtle::paint(QPainter & painter)
 {
+
+    // 1. 绘制目标点蓝色圆圈（假设有目标点）
+  QPen pen(Qt::black);
+  pen.setWidth(1);
+  painter.setPen(pen);
+  painter.setBrush(QColor(255, 140, 0, 255)); // 橙色
+  QPointF goal_pos = QPointF(goal_x_, goal_y_) * meter_;
+  double arrow_len = 15; // 箭头长度（像素）
+  double theta_rad = goal_theta_ * M_PI / 180.0;
+
+  // 箭头终点
+  QPointF arrow_tip = goal_pos + QPointF(std::cos(theta_rad), std::sin(theta_rad)) * arrow_len;
+
+  // 主箭身
+  painter.drawLine(goal_pos, arrow_tip);
+
+  // 箭头两翼
+  double wing_angle = 25.0 * M_PI / 180.0; // 翼与主箭身夹角25°
+  double wing_len = 6; // 翼长
+
+  QPointF left_wing = arrow_tip - QPointF(std::cos(theta_rad - wing_angle), std::sin(theta_rad - wing_angle)) * wing_len;
+  QPointF right_wing = arrow_tip - QPointF(std::cos(theta_rad + wing_angle), std::sin(theta_rad + wing_angle)) * wing_len;
+
+  painter.drawLine(arrow_tip, left_wing);
+  painter.drawLine(arrow_tip, right_wing);
+
+ 
+  // 可选：在箭头根部画个小圆点
+  painter.setBrush(QColor(255, 140, 0, 180));
+  painter.drawEllipse(goal_pos, 3, 3);
+
+
+
   QPointF p = pos_ * meter_;
   p.rx() -= 0.5 * turtle_rotated_image_.width();
   p.ry() -= 0.5 * turtle_rotated_image_.height();
+
+  bool draw_highlight = highlight_error_ && ((error_timer_.elapsed() / 250) % 2 == 0);
+  if (draw_highlight) {
+      painter.save();
+      painter.setOpacity(0.5);
+      painter.setBrush(Qt::red);
+      painter.setPen(Qt::NoPen);
+      painter.drawEllipse(p + QPointF(turtle_rotated_image_.width()/2, turtle_rotated_image_.height()/2), 24, 24);
+      painter.restore();
+  }
+
   painter.drawImage(p, turtle_rotated_image_);
 
 
@@ -212,7 +261,7 @@ Turtle::Turtle(
         throw std::runtime_error("meter_ is 0");
     }
 
-
+    error_timer_.start();
     RCLCPP_INFO(nh_->get_logger(), "Turtle [%s] 构造完成, action servers处于ready状态", real_name.c_str());
 
 }
@@ -307,7 +356,10 @@ void Turtle::rotateImage()
 }
 
 
-
+void Turtle::setOrient(double angle) {
+        orient_ = angle;
+        rotateImage(); // 旋转后刷新乌龟图像
+    }
 
 
 
@@ -471,6 +523,10 @@ bool Turtle::update(
       }
 
       auto goal = server_walk_absolute_goal_handle_->get_goal();
+      goal_x_ = goal->x;
+      goal_y_ = goal->y;
+      goal_theta_ = goal->theta;
+
       double dx = goal->x - pos_.x();
       double dy = goal->y - pos_.y();
       double dist = std::sqrt(dx * dx + dy * dy);
@@ -511,19 +567,25 @@ bool Turtle::update(
         if(abs(angle_end_to_target)<PI/3.0)
         {
           v_is_pos=1.0;
+          highlight_error_ = false;
         }
         else if((PI-abs(angle_end_to_target))<PI/3.0)
         {
           v_is_pos=-1.0;
+          highlight_error_ = false;
         }
         else
         {
           RCLCPP_ERROR(nh_->get_logger(), "[%s] 纵向无法行驶到目标点, 目标角与指向角偏离量超容差des=%0.2f tar=%0.2f, 任务放弃", real_name.c_str(), goal_theta_rad/PI*180.0,target_angle/PI*180.0);
           server_walk_absolute_goal_handle_->abort(server_walk_absolute_result_);
           server_walk_absolute_goal_handle_ = nullptr;
+
           lin_vel_x_ = 0.0;
           lin_vel_y_ = 0.0;
           ang_vel_ = 0.0;
+
+          highlight_error_ = true;
+          error_timer_.restart();
           
           
         }
@@ -573,6 +635,12 @@ bool Turtle::update(
           lin_vel_x_ = 0.0;
           lin_vel_y_ = 0.0;
           ang_vel_ = 0.0;
+
+
+          highlight_error_ = true;
+          error_timer_.restart();
+
+
         }
 
         ang_ft=-df*45.0*v_is_pos;  
@@ -666,8 +734,12 @@ bool Turtle::update(
   //pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt + std::sin(orient_) * lin_vel_y_ * dt;
   //pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt + std::sin(orient_) * lin_vel_x_ * dt;
 
-  pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt;
-  pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt;
+  // pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt;
+  // pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt;
+
+  pos_.rx() += lin_vel_x_ * dt;
+  pos_.ry() += lin_vel_y_ * dt;
+
 
 
   db51_tcp_.Rx_Agv.heartbeat++;

@@ -82,6 +82,16 @@ protected:
   void paintEvent(QPaintEvent * event);
   void resizeEvent(QResizeEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void mouseDoubleClickEvent(QMouseEvent *event) override;
+private:
+    // 拖动相关成员
+    bool dragging_ = false;
+    std::string dragging_turtle_name_;
+    QPoint drag_offset_;
+    //QTimer* blink_timer_ = nullptr;
+
 
 private slots:
   void onUpdate();

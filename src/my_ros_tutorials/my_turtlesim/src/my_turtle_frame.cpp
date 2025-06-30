@@ -52,7 +52,7 @@ void TurtleFrame::mousePressEvent(QMouseEvent *event)
                 my_turtlesim_msgs::msg::SpawnRequest msg;
                 msg.x = 20.0;
                 msg.y = 20.0;
-                msg.theta = 0.0;
+                msg.theta = 90.0;
                 msg.name = name.toStdString();
                 pub->publish(msg);
 
@@ -68,9 +68,75 @@ void TurtleFrame::mousePressEvent(QMouseEvent *event)
             update();
             break;
         }
-    }
+    }//按钮处理结束
+
+    // 判断是否点中某只乌龟
+    for (auto &kv : turtles_) {
+        auto &turtle = kv.second;
+        QPoint turtle_pos = QPoint(turtle->getPos().x() * meter_, turtle->getPos().y() * meter_);
+        double radius = 4 * meter_; // 以乌龟半径为点击范围
+        double delta=(event->pos() - turtle_pos).manhattanLength() ;
+        if (delta< radius) {
+            dragging_ = true;
+            dragging_turtle_name_ = kv.first;
+            drag_offset_ = event->pos() - turtle_pos;
+            setCursor(Qt::ClosedHandCursor);
+            return;
+        }
+    }//判断是否点中某只乌龟
+
     QFrame::mousePressEvent(event);
 }
+
+void TurtleFrame::mouseMoveEvent(QMouseEvent *event)
+{
+    if (dragging_ && turtles_.count(dragging_turtle_name_)) {
+        auto &turtle = turtles_[dragging_turtle_name_];
+        QPointF new_pos = (event->pos() - drag_offset_) / meter_;
+        turtle->setPos(new_pos.x(), new_pos.y());
+        update();
+    }
+    QFrame::mouseMoveEvent(event);
+}
+
+void TurtleFrame::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (dragging_) {
+        dragging_ = false;
+        dragging_turtle_name_.clear();
+        setCursor(Qt::ArrowCursor);
+        update();
+    }
+    QFrame::mouseReleaseEvent(event);
+}
+
+void TurtleFrame::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    // 判断是否点中某只乌龟
+    for (auto &kv : turtles_) {
+        auto &turtle = kv.second;
+        QPoint turtle_pos = QPoint(turtle->getPos().x() * meter_, turtle->getPos().y() * meter_);
+        double radius = 4 * meter_;
+        double delta = (event->pos() - turtle_pos).manhattanLength();
+        if (delta < radius) {
+            double angle = turtle->getOrient();
+            // 判断是否按下Ctrl
+            if (event->modifiers() & Qt::ControlModifier) {
+                angle -= 10.0 * M_PI / 180.0; // 逆向旋转10度
+            } else {
+                angle += 10.0 * M_PI / 180.0; // 正向旋转10度
+            }
+            turtle->setOrient(angle);
+            update();
+            break;
+        }
+    }
+    QFrame::mouseDoubleClickEvent(event);
+}
+
+
+
+
 
 TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent, Qt::WindowFlags f)
 : QFrame(parent, f)
@@ -85,7 +151,9 @@ TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent
   local_id = get_local_id_from_ip(); 
   setWindowTitle("乌龟控制");
 
-
+  //blink_timer_ = new QTimer(this);
+  //connect(blink_timer_, &QTimer::timeout, this, [this]() { this->onUpdate(); });
+  //blink_timer_->start(100); 
 
     // —— 在这里加入 —— 
   setAutoFillBackground(true);
@@ -539,6 +607,7 @@ void TurtleFrame::updateTurtles()
     modified |= it->second->update(
       0.001 * update_timer_->interval(), path_painter_, path_image_, width_in_meters_,
       height_in_meters_);
+      modified |=it->second->highlight_error_;
   }
 
 
