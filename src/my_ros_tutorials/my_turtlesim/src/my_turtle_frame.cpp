@@ -52,7 +52,7 @@ void TurtleFrame::mousePressEvent(QMouseEvent *event)
                 my_turtlesim_msgs::msg::SpawnRequest msg;
                 msg.x = 20.0;
                 msg.y = 20.0;
-                msg.theta = 45.0;
+                msg.theta = 0.0;
                 msg.name = name.toStdString();
                 pub->publish(msg);
 
