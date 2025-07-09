@@ -715,7 +715,7 @@ bool Turtle::update(
       // 三个条件都满足才算完成
       bool dist_ok = ((dist < 0.001)&& (goal->x1_y2_rote3==1 || goal->x1_y2_rote3==2)) || (goal->x1_y2_rote3==3);
       if (dist_ok && std::abs(theta_error) < 0.001) {
-        RCLCPP_INFO(nh_->get_logger(), "[%s] ros action server消息: 绝对值action完成", real_name.c_str());
+        RCLCPP_WARN(nh_->get_logger(), "[%s] ros action server消息: 绝对值action完成", real_name.c_str());
         server_walk_absolute_result_->delta = dist;
         if(server_walk_absolute_goal_handle_)
         {
