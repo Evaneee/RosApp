@@ -530,7 +530,23 @@ bool Turtle::update(
       double dx = goal->x - pos_.x();
       double dy = goal->y - pos_.y();
       double dist = std::sqrt(dx * dx + dy * dy);
-      double target_angle = std::atan2(dy, dx); 
+      double target_angle=0;
+      if (dist>0.001)
+        target_angle = std::atan2(dy, dx); 
+      else
+      {
+        if(goal->x1_y2_rote3>=2)
+        {
+          target_angle = orient_; //如果距离小于0.1m，直接使用当前
+        }
+        else if(goal->x1_y2_rote3==1)
+        {
+          target_angle = orient_ + M_PI/2.0; //如果距离小于0.1m，直接使用当前
+        }
+          
+      }
+        
+
       double goal_theta_rad = goal->theta * M_PI / 180.0;
       double theta_error = normalizeAngle(goal_theta_rad - orient_);
       goal_vel=goal->vel;
@@ -697,7 +713,7 @@ bool Turtle::update(
       //server_walk_absolute_goal_handle_->publish_feedback(server_walk_absolute_feedback_);
 
       // 三个条件都满足才算完成
-      bool dist_ok = ((dist < 0.01)&& (goal->x1_y2_rote3==1 || goal->x1_y2_rote3==2)) || (goal->x1_y2_rote3==3);
+      bool dist_ok = ((dist < 0.001)&& (goal->x1_y2_rote3==1 || goal->x1_y2_rote3==2)) || (goal->x1_y2_rote3==3);
       if (dist_ok && std::abs(theta_error) < 0.001) {
         RCLCPP_INFO(nh_->get_logger(), "[%s] ros action server消息: 绝对值action完成", real_name.c_str());
         server_walk_absolute_result_->delta = dist;
@@ -854,7 +870,7 @@ Turtle::~Turtle()
         modbus_free(modbus_ctx_);
         modbus_ctx_ = nullptr;
     }
-    RCLCPP_INFO(nh_->get_logger(), "Turtle [%s] Modbus资源已释放", real_name.c_str());
+    RCLCPP_INFO(nh_->get_logger(), "Turtle [%s] Modbus对象资源已释放", real_name.c_str());
 }
 
 

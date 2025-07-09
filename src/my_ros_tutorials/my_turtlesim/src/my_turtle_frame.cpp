@@ -435,7 +435,7 @@ std::string TurtleFrame::spawnTurtle(
 
   RCLCPP_INFO(
     nh_->get_logger(), "Spawning turtle [%s] at x=[%f], y=[%f], theta=[%f]",
-    real_name.c_str(), x, y, angle);
+    real_name.c_str(), x, y, angle/PI*180.0);
 
   return real_name;
 }

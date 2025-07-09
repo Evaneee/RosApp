@@ -1,0 +1,15 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "colcon build (Debug, clean cache, 16 jobs)",
+            "type": "shell",
+            "command": "colcon build --cmake-clean-cache --cmake-args -DCMAKE_BUILD_TYPE=Debug --parallel-workers 16",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
