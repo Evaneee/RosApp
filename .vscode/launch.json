@@ -8,7 +8,7 @@
             "program": "/bin/bash",
             "args": [
                 "-c",
-                "source /opt/ros/humble/setup.bash && source /home/evanee/Documents/mygit/my_turtle/install/setup.bash && exec /home/evanee/Documents/mygit/my_turtle/install/my_turtlesim/lib/my_turtlesim/my_turtlesim_node"
+                "source /opt/ros/humble/setup.bash && source /home/evanee/mygit/RosApp/install/setup.bash && exec /home/evanee/mygit/RosApp/install/my_turtlesim/lib/my_turtlesim/my_turtlesim_node"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

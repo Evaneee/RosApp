@@ -2,8 +2,6 @@
 
 namespace my_turtlesim
 {
-
-    int cnt;
 void Turtle::agv_state_machine()
 {
     //程序段19：AGV运行中
@@ -21,7 +19,6 @@ void Turtle::agv_state_machine()
         db50_agv_.Sys.Agv_Run_Proc=false;
     }
 
-
     //程序16：AGV运行启动
     //Agv_Start 在进入step0之前根据条件保持一个周期true，进入step0以后都是false，直到执行到step100的下一個周期
     db50_agv_.Sys.Agv_Start =   (!db50_agv_.Sys.Agv_Run_Proc) &&
@@ -33,16 +30,7 @@ void Turtle::agv_state_machine()
         db51_tcp_.Tx_Agv.General.reserve1= 0; 
         modbus_mapping_->tab_registers[40]=0;
     }
-
-
-
-    if(db51_tcp_.Tx_Agv.General.nodenum > 0)
-    {
-        cnt++;
-    }
-
-
-    // 单步运行标志位，step0以后任何一个step回来，Agv_Rsy_Cycle=true
+    // 单步运行标志位，step0以后任何一个step执行过程中， Agv_Rsy_Cycle =true，避免执行后面的步骤
     if (db50_agv_.Sys.Agv_Rsy_Cycle) {
         db50_agv_.Sys.Agv_Rsy_Cycle = false;
     }
@@ -94,6 +82,7 @@ void Turtle::agv_state_machine()
         if (idx > 9) idx = 9; // 防止越界
 
         db50_agv_.Node_SP.nodeno = db51_tcp_.Tx_Agv.Seq[idx].nodeno;
+        RCLCPP_INFO(nh_->get_logger(), "[%s] step10: ------------------------------------", real_name.c_str());
         RCLCPP_INFO(nh_->get_logger(), "[%s] step10: 读取modbus发布的子节点%d信息: nodeno=%d", real_name.c_str(),idx, db50_agv_.Node_SP.nodeno);
         db50_agv_.Node_SP.nodetype_action_sp = db51_tcp_.Tx_Agv.Seq[idx].nodetype_action_sp;
         db50_agv_.Node_SP.action_l = db51_tcp_.Tx_Agv.Seq[idx].action_l;
@@ -292,20 +281,6 @@ void Turtle::agv_state_machine()
         else if ((db50_agv_.Status.Rotate_Fwd && !db50_agv_.Status.Rotate_Bwd) ||
                    (!db50_agv_.Status.Rotate_Fwd && db50_agv_.Status.Rotate_Bwd)) 
         {
-            // // 原旋转程序
-            // if (!db50_agv_.Excute.Rotation_Start /*&& !DB40_Motion.Locate.Error*/) {
-            //     // DB40_Motion.Locate.Action_Sel = false;
-            //     db50_agv_.Real_Tar_Speed = 0.05f;
-            //     db50_agv_.Excute.Rotation_Start = true;
-            // }
-            // // 判断是否执行完成
-            // if (db50_agv_.Excute.Rotation_Start /*&& DB40_Motion.Rotate.Done*/) {
-            //     db50_agv_.Excute.Rotation_Start = false;
-            //     db50_agv_.Int_Step = 30;
-            //     db50_agv_.Sys.Agv_Rsy_Cycle = true;
-            // }
-
-            /*-------------------------------------------------------------------------------------------------------------------------------------*/
             if (!db50_agv_.Excute.Rotation_Start && !client_walk_absolute_goal_handle_) 
             {
                 auto goal_msg = my_turtlesim_msgs::action::WalkAbsolute::Goal();
@@ -351,7 +326,6 @@ void Turtle::agv_state_machine()
                     client_walk_absolute_goal_handle_ = client_walk_absolute_goal_handle_future_.get();
                 }
             }
-          /*-------------------------------------------------------------------------------------------------------------------------------------*/
 
         } 
         else
@@ -385,36 +359,6 @@ void Turtle::agv_state_machine()
         {
 
 /*-------------------------------------------------------------------------------------------------------------------------------------*/
-
-            // // 这里应调用直行程序，伪代码如下
-            // if ((db50_agv_.Status.Mov_Fwd || db50_agv_.Status.Mov_Bwd) &&
-            //     !db50_agv_.Status.Mov_Left && !db50_agv_.Status.Mov_Right) {
-            //     if (!db50_agv_.Excute.MoveL_H_Start /*&& !DB40_Motion.Trace.Done && !DB40_Motion.Trace.Error*/) {
-            //         db50_agv_.Excute.MoveL_H_Start = true;
-            //         if (db50_agv_.Status.Mov_Fwd)
-            //             db50_agv_.Real_Tar_Speed = db50_agv_.Real_Speedset;
-            //         else
-            //             db50_agv_.Real_Tar_Speed = -db50_agv_.Real_Speedset;
-            //     }
-            // }
-            // if ((db50_agv_.Status.Mov_Left || db50_agv_.Status.Mov_Right) &&
-            //     !db50_agv_.Status.Mov_Fwd && !db50_agv_.Status.Mov_Bwd) {
-            //     if (!db50_agv_.Excute.MoveL_V_Start /*&& !DB40_Motion.Trace.Done && !DB40_Motion.Trace.Error*/) {
-            //         db50_agv_.Excute.MoveL_V_Start = true;
-            //         if (db50_agv_.Status.Mov_Left)
-            //             db50_agv_.Real_Tar_Speed = -db50_agv_.Real_Speedset;
-            //         else
-            //             db50_agv_.Real_Tar_Speed = db50_agv_.Real_Speedset;
-            //     }
-            // }
-            // // 判断是否执行完成
-            // if ((db50_agv_.Excute.MoveL_H_Start || db50_agv_.Excute.MoveL_V_Start) /*&& DB40_Motion.Trace.Done*/) {
-            //     db50_agv_.Excute.MoveL_H_Start = false;
-            //     db50_agv_.Excute.MoveL_V_Start = false;
-            //     db50_agv_.Int_Step = 35;
-            //     db50_agv_.Sys.Agv_Rsy_Cycle = true;
-            // }
-
             // 直行动作（横向/纵向）统一用 action client 调用
             if (((db50_agv_.Status.Mov_Fwd || db50_agv_.Status.Mov_Bwd) && !db50_agv_.Status.Mov_Left && !db50_agv_.Status.Mov_Right) ||
                 ((db50_agv_.Status.Mov_Left || db50_agv_.Status.Mov_Right) && !db50_agv_.Status.Mov_Fwd && !db50_agv_.Status.Mov_Bwd))

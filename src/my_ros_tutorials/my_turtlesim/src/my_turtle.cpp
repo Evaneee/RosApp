@@ -365,9 +365,7 @@ void Turtle::setOrient(double angle) {
 
 /*======================================================================================================================================================================= */
 
-bool Turtle::update(
-  double dt, QPainter & path_painter, const QImage & path_image,
-  qreal canvas_width, qreal canvas_height)
+bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_image,qreal canvas_width, qreal canvas_height)
 {
 
   (void)canvas_width;
@@ -377,16 +375,6 @@ bool Turtle::update(
   qreal old_orient = orient_;
   syn_agv_para();
 
-  //测试出结果，正常坐标系，点在直线高角度一侧，返回值为负
-  // double tmp;
-  // tmp=pointToLineSignedDistance(QPointF(300,200),500,500,30);
-  // RCLCPP_INFO(nh_->get_logger(), "tmp = %f", tmp);
-  // tmp=pointToLineSignedDistance(QPointF(200,500),500,500,30);
-  // RCLCPP_INFO(nh_->get_logger(), "tmp = %f", tmp);
-
-
-
-// first process any teleportation requests, in order
   V_TeleportRequest::iterator it = teleport_requests_.begin();
   V_TeleportRequest::iterator end = teleport_requests_.end();
   for (; it != end; ++it) {
@@ -459,14 +447,17 @@ bool Turtle::update(
   //处理绝对值定位action
   if (server_walk_absolute_goal_handle_) 
   {
-    if (server_walk_absolute_goal_handle_->is_canceling()) {
+    if (server_walk_absolute_goal_handle_->is_canceling()) 
+    {
       RCLCPP_INFO(nh_->get_logger(), "绝对值走位目标已取消");
       server_walk_absolute_goal_handle_->canceled(server_walk_absolute_result_);
       server_walk_absolute_goal_handle_ = nullptr;
       lin_vel_x_ = 0.0;
       lin_vel_y_ = 0.0;
       ang_vel_ = 0.0;
-    } else {
+    } 
+    else 
+    {
 
 
 //麦轮形式的闭环
@@ -694,28 +685,14 @@ bool Turtle::update(
         lin_vel_y_=0;
 
       }
-
-
-
-
-      // if(ang_vel_>0.2)
-      // {
-      //   cnt2++;
-      // }
-///////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
       // 发布反馈
-
       server_walk_absolute_feedback_->remaining = dist;
       //server_walk_absolute_goal_handle_->publish_feedback(server_walk_absolute_feedback_);
 
       // 三个条件都满足才算完成
       bool dist_ok = ((dist < 0.001)&& (goal->x1_y2_rote3==1 || goal->x1_y2_rote3==2)) || (goal->x1_y2_rote3==3);
       if (dist_ok && std::abs(theta_error) < 0.001) {
-        RCLCPP_WARN(nh_->get_logger(), "[%s] ros action server消息: 绝对值action完成", real_name.c_str());
+        RCLCPP_INFO(nh_->get_logger(), "[%s] 🌿🌿🌿: ros action server消息: 绝对值action完成", real_name.c_str());
         server_walk_absolute_result_->delta = dist;
         if(server_walk_absolute_goal_handle_)
         {
@@ -732,32 +709,23 @@ bool Turtle::update(
 
 
 
+  //update主函数级别内容
   if (nh_->now() - last_command_time_ > rclcpp::Duration(1.0, 0)) {
     lin_vel_x_ = 0.0;
     lin_vel_y_ = 0.0;
     ang_vel_ = 0.0;
   }
 
-
   //更新小乌龟坐标，更新坐标后，会在paint函数中绘制小乌龟
   QPointF old_pos = pos_;
   orient_ = orient_ + ang_vel_ * dt;
   // Keep orient_ between -pi and +pi
   orient_ = normalizeAngle(orient_);
-  //pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt - std::sin(orient_) * lin_vel_y_ * dt;
-  //pos_.ry() -= std::cos(orient_) * lin_vel_y_ * dt + std::sin(orient_) * lin_vel_x_ * dt;
-
-  //pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt + std::sin(orient_) * lin_vel_y_ * dt;
-  //pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt + std::sin(orient_) * lin_vel_x_ * dt;
-
-  // pos_.rx() += std::cos(orient_) * lin_vel_x_ * dt;
-  // pos_.ry() += std::cos(orient_) * lin_vel_y_ * dt;
-
   pos_.rx() += lin_vel_x_ * dt;
   pos_.ry() += lin_vel_y_ * dt;
 
 
-
+  //写入到modbus区域，供master读取
   db51_tcp_.Rx_Agv.heartbeat++;
   db51_tcp_.Rx_Agv.agvno   = modbus_port_ - 1502; // 写入乌龟编号
   db51_tcp_.Rx_Agv.station = db50_agv_.Node_SP.nodeno;
@@ -797,9 +765,7 @@ bool Turtle::update(
 
   // Publish pose of the turtle
   auto p = std::make_unique<my_turtlesim_msgs::msg::Pose>();
-  p->x = pos_.x();
-  //自己改的，新生成的小乌龟使用画布坐标
-  //p->y = canvas_height - pos_.y();
+  p->x = pos_.x(); 
   p->y = pos_.y();//这是更改内容
   p->theta = orient_;
   p->linear_velocity = std::sqrt(lin_vel_x_ * lin_vel_x_ + lin_vel_y_ * lin_vel_y_);
@@ -825,10 +791,6 @@ bool Turtle::update(
       color->g = 255;
       color->b = 255;
     }
-
-
-
-    
     color_pub_->publish(std::move(color));
   }
 
