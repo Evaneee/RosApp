@@ -543,6 +543,7 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
       goal_vel=goal->vel;
 
       double angle_end_to_target ;
+      double angle_orient_to_target;
       double dist_project;
       double dist_project_limit;
       double v;
@@ -560,6 +561,7 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
       if (goal->x1_y2_rote3==2)
       {
         angle_end_to_target = normalizeAngle(target_angle - goal_theta_rad);
+        angle_orient_to_target= normalizeAngle(target_angle - orient_);
         dist_project = dist * std::cos(angle_end_to_target); // 计算目标点到直线的投影距离
         dist_project_limit=mylimit(dist_project,-10,10); //大于0意味着正向正确
         v=goal->vel*4.0*dist_project_limit;
@@ -571,12 +573,12 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
         df=pointToLineSignedDistance(point_f,goal->x,goal->y,goal->theta);
         db=pointToLineSignedDistance(point_b,goal->x,goal->y,goal->theta);
 
-        if(abs(angle_end_to_target)<PI/3.0)
+        if(abs(angle_end_to_target)<PI/3.0 && abs(angle_orient_to_target)<PI/3.0)
         {
           v_is_pos=1.0;
           highlight_error_ = false;
         }
-        else if((PI-abs(angle_end_to_target))<PI/3.0)
+        else if((PI-abs(angle_end_to_target))<PI/3.0 && (PI-abs(angle_orient_to_target))<PI/3.0)
         {
           v_is_pos=-1.0;
           highlight_error_ = false;
@@ -587,9 +589,7 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
           server_walk_absolute_goal_handle_->abort(server_walk_absolute_result_);
           server_walk_absolute_goal_handle_ = nullptr;
 
-          lin_vel_x_ = 0.0;
-          lin_vel_y_ = 0.0;
-          ang_vel_ = 0.0;
+          v_is_pos=0;
 
           highlight_error_ = true;
           error_timer_.restart();
@@ -608,12 +608,18 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
         lin_vel_x_=v* cos(angm_to_orient/180.0*PI);
         lin_vel_y_=v* sin(angm_to_orient/180.0*PI);
         ang_vel_=-v/now_R;
+
+
+
+
+
       }
 
 
       else if (goal->x1_y2_rote3==1)
       {
         angle_end_to_target = normalizeAngle(target_angle - (goal_theta_rad+PI/2.0));
+        angle_orient_to_target= normalizeAngle(target_angle - (orient_+PI/2.0));
         dist_project = dist * std::cos(angle_end_to_target); // 计算目标点到直线的投影距离
         dist_project_limit=mylimit(dist_project,-10,10); //大于0意味着正向正确
         v=-goal->vel*4.0*dist_project_limit;
@@ -624,11 +630,11 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
         df=pointToLineSignedDistance(point_r,goal->x,goal->y,goal->theta+90);
         db=pointToLineSignedDistance(point_l,goal->x,goal->y,goal->theta+90);
 
-        if(abs(angle_end_to_target)<PI/3.0)
+        if(abs(angle_end_to_target)<PI/3.0 && abs(angle_orient_to_target)<PI/3.0)
         {
           v_is_pos=1.0;
         }
-        else if((PI-abs(angle_end_to_target))<PI/3.0)
+        else if((PI-abs(angle_end_to_target))<PI/3.0 && (PI-abs(angle_orient_to_target))<PI/3.0)
         {
           v_is_pos=-1.0;
         }
@@ -638,11 +644,6 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
 
           server_walk_absolute_goal_handle_->abort(server_walk_absolute_result_);
           server_walk_absolute_goal_handle_ = nullptr;
-
-          lin_vel_x_ = 0.0;
-          lin_vel_y_ = 0.0;
-          ang_vel_ = 0.0;
-
 
           highlight_error_ = true;
           error_timer_.restart();
@@ -685,6 +686,16 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
         lin_vel_y_=0;
 
       }
+
+      if(highlight_error_)
+      {
+        lin_vel_x_=0;
+        lin_vel_y_=0;
+        ang_vel_=0;
+      }
+
+
+
       // 发布反馈
       server_walk_absolute_feedback_->remaining = dist;
       //server_walk_absolute_goal_handle_->publish_feedback(server_walk_absolute_feedback_);
@@ -692,7 +703,7 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
       // 三个条件都满足才算完成
       bool dist_ok = ((dist < 0.001)&& (goal->x1_y2_rote3==1 || goal->x1_y2_rote3==2)) || (goal->x1_y2_rote3==3);
       if (dist_ok && std::abs(theta_error) < 0.001) {
-        RCLCPP_INFO(nh_->get_logger(), "[%s] 🌿🌿🌿: ros action server消息: 绝对值action完成", real_name.c_str());
+        RCLCPP_WARN(nh_->get_logger(), "[%s] 🌿🌿🌿: ros action server消息: 绝对值action完成", real_name.c_str());
         server_walk_absolute_result_->delta = dist;
         if(server_walk_absolute_goal_handle_)
         {

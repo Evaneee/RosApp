@@ -116,7 +116,7 @@ void TurtleFrame::mouseDoubleClickEvent(QMouseEvent *event)
     for (auto &kv : turtles_) {
         auto &turtle = kv.second;
         QPoint turtle_pos = QPoint(turtle->getPos().x() * meter_, turtle->getPos().y() * meter_);
-        double radius = 4 * meter_;
+        double radius = 10 * meter_;
         double delta = (event->pos() - turtle_pos).manhattanLength();
         if (delta < radius) {
             double angle = turtle->getOrient();
@@ -127,6 +127,7 @@ void TurtleFrame::mouseDoubleClickEvent(QMouseEvent *event)
                 angle += 10.0 * M_PI / 180.0; // 正向旋转10度
             }
             turtle->setOrient(angle);
+            turtle->highlight_error_ = false; // 取消高亮错误状态
             update();
             break;
         }
