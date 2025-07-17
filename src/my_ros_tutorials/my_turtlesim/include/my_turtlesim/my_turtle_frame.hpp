@@ -40,6 +40,7 @@
 #include <QPaintEvent>
 #include <QTimer>
 #include <QVector>
+#include <QLineEdit>
 
 // This prevents a MOC error with versions of boost >= 1.48
 #ifndef Q_MOC_RUN  // See: https://bugreports.qt-project.org/browse/QTBUG-22829
@@ -90,8 +91,8 @@ private:
     bool dragging_ = false;
     std::string dragging_turtle_name_;
     QPoint drag_offset_;
-    //QTimer* blink_timer_ = nullptr;
-
+    QVector<QLineEdit*> turtle_coord_edits_; // 新增：每个按钮下的文本框
+    const int button_count = 8; // 放到头文件或全局
 
 private slots:
   void onUpdate();
@@ -145,6 +146,7 @@ private:
   rclcpp::Subscription<my_turtlesim_msgs::msg::SpawnRequest>::SharedPtr spawn_sub_;
   void spawnTopicCallback(const my_turtlesim_msgs::msg::SpawnRequest::SharedPtr msg);
 
+  void loadConfigFile(const QString& filename);
 
   typedef std::map<std::string, TurtlePtr> M_Turtle;
   M_Turtle turtles_;
@@ -158,6 +160,8 @@ private:
 
   QVector<QRect> button_rects_;
   QVector<bool> button_states_;   // 按钮状态（true=已生成，false=未生成）
+  QRect save_button_rect_;
+  QRect load_button_rect_;
   int next_modbus_port_ = 1502; // 成员变量
 
   std::string local_id;

@@ -52,6 +52,7 @@ add_executable(my_turtlesim_node
   src/my_turtlesim.cpp
   src/my_turtle.cpp
   src/my_turtle_frame.cpp
+  src/my_turtle_frame_utils.cpp
   src/agv_modbus_mapping.cpp    # <--- 新增这一行
   src/agv_state_machine.cpp      # <--- 新增这一行
   ${my_turtlesim_node_MOCS}

@@ -1,22 +1,11 @@
-#include "my_turtlesim/my_turtle_frame.hpp"
-
-#include <QPointF>
-#include <QTime>
-
-#include <cstdlib>
+#include <QLineEdit>
 #include <ctime>
-#include <functional>
-#include <string>
-#include <QApplication>    // 新增
-#include <QPalette>        // 新增
-
+#include "my_turtlesim/my_turtle_frame.hpp"
 #include "rcl_interfaces/msg/integer_range.hpp"
 #include "rcl_interfaces/msg/parameter_descriptor.hpp"
 #include "rcl_interfaces/msg/parameter_event.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "std_srvs/srv/empty.hpp"
-
-//#include "my_turtlesim_msgs/srv/kill.hpp"
 #include "my_turtlesim_msgs/msg/spawn_request.hpp"
 
 #define DEFAULT_BG_R 0x45
@@ -26,147 +15,24 @@
 namespace my_turtlesim
 {
 
-void TurtleFrame::resizeEvent(QResizeEvent *event)
-{
-  // 重新设置 path_image_ 大小
-  if (path_painter_.isActive()) {
-      path_painter_.end();
-  }
-  path_image_ = QImage(event->size(), QImage::Format_ARGB32);
-  path_image_.fill(qRgba(255, 255, 255, 0));
-  // 不要在这里 begin，等需要绘制路径时再 begin
-  width_in_meters_ = (width() - 1) / meter_;
-  height_in_meters_ = (height() - 1) / meter_;
-
-  update();
-  QFrame::resizeEvent(event);
-}
-
-void TurtleFrame::mousePressEvent(QMouseEvent *event)
-{
-    for (int i = 0; i < button_rects_.size(); ++i) {
-        if (button_rects_[i].contains(event->pos())) {
-            QString name = QString("No%1").arg(i);
-            if (!button_states_[i]) {
-                auto pub = nh_->create_publisher<my_turtlesim_msgs::msg::SpawnRequest>("/spawn"+local_id, 10);
-                my_turtlesim_msgs::msg::SpawnRequest msg;
-                msg.x = 20.0;
-                msg.y = 20.0;
-                msg.theta = 90.0;
-                msg.name = name.toStdString();
-                pub->publish(msg);
-
-            } else {
-
-                auto pub = nh_->create_publisher<std_msgs::msg::String>("/kill"+local_id, 10);
-                std_msgs::msg::String msg;
-                msg.data = name.toStdString();
-                pub->publish(msg);
-            }
-                        // 立即刷新按钮状态和界面
-            updateTurtles();
-            update();
-            break;
-        }
-    }//按钮处理结束
-
-    // 判断是否点中某只乌龟
-    for (auto &kv : turtles_) {
-        auto &turtle = kv.second;
-        QPoint turtle_pos = QPoint(turtle->getPos().x() * meter_, turtle->getPos().y() * meter_);
-        double radius = 4 * meter_; // 以乌龟半径为点击范围
-        double delta=(event->pos() - turtle_pos).manhattanLength() ;
-        if (delta< radius) {
-            dragging_ = true;
-            dragging_turtle_name_ = kv.first;
-            drag_offset_ = event->pos() - turtle_pos;
-            setCursor(Qt::ClosedHandCursor);
-            return;
-        }
-    }//判断是否点中某只乌龟
-
-    QFrame::mousePressEvent(event);
-}
-
-void TurtleFrame::mouseMoveEvent(QMouseEvent *event)
-{
-    if (dragging_ && turtles_.count(dragging_turtle_name_)) {
-        auto &turtle = turtles_[dragging_turtle_name_];
-        QPointF new_pos = (event->pos() - drag_offset_) / meter_;
-        turtle->setPos(new_pos.x(), new_pos.y());
-        update();
-    }
-    QFrame::mouseMoveEvent(event);
-}
-
-void TurtleFrame::mouseReleaseEvent(QMouseEvent *event)
-{
-    if (dragging_) {
-        dragging_ = false;
-        dragging_turtle_name_.clear();
-        setCursor(Qt::ArrowCursor);
-        update();
-    }
-    QFrame::mouseReleaseEvent(event);
-}
-
-void TurtleFrame::mouseDoubleClickEvent(QMouseEvent *event)
-{
-    // 判断是否点中某只乌龟
-    for (auto &kv : turtles_) {
-        auto &turtle = kv.second;
-        QPoint turtle_pos = QPoint(turtle->getPos().x() * meter_, turtle->getPos().y() * meter_);
-        double radius = 10 * meter_;
-        double delta = (event->pos() - turtle_pos).manhattanLength();
-        if (delta < radius) {
-            double angle = turtle->getOrient();
-            // 判断是否按下Ctrl
-            if (event->modifiers() & Qt::ControlModifier) {
-                angle -= 10.0 * M_PI / 180.0; // 逆向旋转10度
-            } else {
-                angle += 10.0 * M_PI / 180.0; // 正向旋转10度
-            }
-            turtle->setOrient(angle);
-            turtle->highlight_error_ = false; // 取消高亮错误状态
-            update();
-            break;
-        }
-    }
-    QFrame::mouseDoubleClickEvent(event);
-}
-
-
-
-
 
 TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent, Qt::WindowFlags f)
 : QFrame(parent, f)
   , path_image_(800, 600, QImage::Format_ARGB32)
-  //, path_painter_(&path_image_)//这里改了，不要传 &path_image_，让它初始未激活
-  //不然会在控制台打印错误消息
   , path_painter_()
   , frame_count_(0)
   , id_counter_(0)
 {
-
   local_id = get_local_id_from_ip(); 
   setWindowTitle("乌龟控制");
 
-  //blink_timer_ = new QTimer(this);
-  //connect(blink_timer_, &QTimer::timeout, this, [this]() { this->onUpdate(); });
-  //blink_timer_->start(100); 
 
-    // —— 在这里加入 —— 
   setAutoFillBackground(true);
   {
     QPalette pal = palette();
-    // 使用系统控件背景色，也可以改成 QPalette::Window
-    //pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::button));
-
     pal.setColor(QPalette::Window, QColor(180, 180, 180));
     setPalette(pal);
   }
-  // —— 加入结束 —— 
 
 
   srand(time(NULL));
@@ -178,8 +44,6 @@ TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent
   connect(update_timer_, SIGNAL(timeout()), this, SLOT(onUpdate()));
 
   nh_ = node_handle;
-
-
   connect(this, &TurtleFrame::requestGuiUpdate, this, [this]() {
       updateTurtles();
       update();
@@ -213,19 +77,6 @@ TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent
   nh_->declare_parameter("holonomic", rclcpp::ParameterValue(false), holonomic_descriptor);
 
   QVector<QString> turtles;
-  // turtles.append("ardent.png");
-  // turtles.append("bouncy.png");
-  // turtles.append("crystal.png");
-  // turtles.append("dashing.png");
-  // turtles.append("eloquent.png");
-  // turtles.append("foxy.png");
-  // turtles.append("galactic.png");
-  // turtles.append("humble.png");
-  // turtles.append("iron.png");
-  // turtles.append("jazzy.png");
-  // turtles.append("kilted.png");
-  // turtles.append("rolling.png");
-
   turtles.append("No0.png");
   turtles.append("No1.png");
   turtles.append("No2.png");
@@ -240,8 +91,6 @@ TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent
 
   turtles.append("kilted.png");
   turtles.append("rolling.png");
-
-
 
   QString images_path =
     (ament_index_cpp::get_package_share_directory("my_turtlesim") + "/images/").c_str();
@@ -288,31 +137,28 @@ TurtleFrame::TurtleFrame(rclcpp::Node::SharedPtr & node_handle, QWidget * parent
 
   width_in_meters_ = (width() - 1) / meter_;
   height_in_meters_ = (height() - 1) / meter_;
-  //spawnTurtle("", width_in_meters_ / 2.0, height_in_meters_ / 2.0, 0);
-  //修改为画布的起始位置
-  //spawnTurtle("", 0, 0, 0);
 
-  // spawn all available turtle types
-  if (false) {
-    for (int index = 0; index < turtles.size(); ++index) {
-      QString name = turtles[index];
-      name = name.split(".").first();
-      name.replace(QString("-"), QString(""));
-      spawnTurtle(
-        name.toStdString(), 1.0f + 1.5f * (index % 7), 1.0f + 1.5f * (index / 7),
-        static_cast<float>(PI) / 2.0f, index);
-    }
+  //绘制8个文本框，按钮不需要绘制，因为不是真的按钮，只是画出来的区域
+  for (int i = 0; i < button_count; ++i) {
+      QLineEdit* edit = new QLineEdit(this);
+      edit->setText("5.0,5.0,0.0");
+      edit->setAlignment(Qt::AlignCenter);
+      edit->show();
+      turtle_coord_edits_.append(edit);
   }
 
+  setMinimumSize(600, 200);   // 设置最小尺寸，防止太小
+  resize(952, 600);           // 设置默认初始尺寸
 
+  loadConfigFile("turtle_config.txt");
 }
 
 TurtleFrame::~TurtleFrame()
 {
-  // executor_->cancel();
-  // if (ros_spin_thread_.joinable()) ros_spin_thread_.join();
-
   delete update_timer_;
+  turtle_coord_edits_.clear();
+  turtle_images_.clear();
+  turtles_.clear();
 }
 
 
@@ -320,22 +166,13 @@ TurtleFrame::~TurtleFrame()
 void TurtleFrame::spawnTopicCallback(const my_turtlesim_msgs::msg::SpawnRequest::SharedPtr msg)
 {
   RCLCPP_INFO(nh_->get_logger(), "spawnTopicCallback start");
-    std::string name = spawnTurtle(msg->name, msg->x, msg->y, msg->theta/180.0*PI);
-    if (name.empty()) {
-      RCLCPP_ERROR(nh_->get_logger(), "A turtle named [%s] already exists", msg->name.c_str());
-      return;
-    }
-    //emit requestGuiUpdate();
-
-RCLCPP_INFO(nh_->get_logger(), "spawnTopicCallback end");
-
-
-
+  std::string name = spawnTurtle(msg->name, msg->x, msg->y, msg->theta/180.0*PI);
+  if (name.empty()) {
+    RCLCPP_ERROR(nh_->get_logger(), "A turtle named [%s] already exists", msg->name.c_str());
+    return;
+  }
+  RCLCPP_INFO(nh_->get_logger(), "spawnTopicCallback end");
 }
-
-
-
-
 
 
 
@@ -372,10 +209,6 @@ bool TurtleFrame::hasTurtle(const std::string & name)
 
 std::string TurtleFrame::spawnTurtle(const std::string & name, float x, float y, float angle)
 {
-  //return spawnTurtle(name, x, y, angle, rand() % turtle_images_.size());
-  //修改为固定的图像，而不是随机的
-  //return spawnTurtle(name, x, y, angle, 11);
-
   // 检查名字是否以 "No" 开头并带数字
   size_t index = 11; // 默认图片索引
   if (name.size() > 2 && name.substr(0, 2) == "No") {
@@ -421,19 +254,7 @@ std::string TurtleFrame::spawnTurtle(
       y), angle, modbus_port,true);
   turtles_[real_name] = t;
 
-
-  // 用线程异步初始化 Modbus，避免阻塞服务回调
-  // std::thread([t](){
-  //     try {
-  //         t->init_modbus();
-  //     } catch (const std::exception& e) {
-  //         RCLCPP_ERROR(t->getLogger(), "Modbus init failed: %s", e.what());
-  //     }
-  // }).detach();
-
-
   update();
-
   RCLCPP_INFO(
     nh_->get_logger(), "Spawning turtle [%s] at x=[%f], y=[%f], theta=[%f]",
     real_name.c_str(), x, y, angle/PI*180.0);
@@ -460,147 +281,24 @@ void TurtleFrame::onUpdate()
   updateTurtles();
 }
 
-void TurtleFrame::paintEvent(QPaintEvent * event)
-{
-  (void)event;  // NO LINT
-  QPainter painter(this);
-
-  // int r = DEFAULT_BG_R;
-  // int g = DEFAULT_BG_G;
-  // int b = DEFAULT_BG_B;
-  // nh_->get_parameter("background_r", r);
-  // nh_->get_parameter("background_g", g);
-  // nh_->get_parameter("background_b", b);
-  // QRgb background_color = qRgb(r, g, b);
-  // painter.fillRect(0, 0, width(), height(), background_color);
-
-  //修改去除路径显示
-  //painter.drawImage(QPoint(0, 0), path_image_);
-
-  // 1. 收集所有乌龟的坐标信息
-  QString all_coords_text;
-  for (const auto& kv : turtles_) {
-    const auto& name = kv.first;
-    const auto& turtle = kv.second;
-    double x = turtle->getPos().x();
-    double y = turtle->getPos().y();
-    double theta_deg = turtle->getOrient() * 180.0 / M_PI;
-    double tvel=turtle->goal_vel;
-    all_coords_text += QString("[%1: (%2, %3, %4, %5)]\n")
-      .arg(QString::fromStdString(name), -4) // 名字左对齐宽8
-      .arg(x, 6, 'f', 2, QChar(' '))         // x宽6，小数2位，空格补齐
-      .arg(y, 6, 'f', 2, QChar(' '))
-      .arg(theta_deg, 6, 'f', 2, QChar(' '))
-      .arg(tvel, 6, 'f', 2, QChar(' '));
-  }
-
-
-  // 2. 绘制在画布右上角（纵向排列）
-  painter.setPen(Qt::black);
-  QFont font("Monospace"); // 或 QFont("Monospace")
-  font.setStyleHint(QFont::Monospace); // 强制等宽
-  font.setPointSize(8);
-  painter.setFont(font);
-
-  QFontMetrics fm(font);
-  int text_width = 0;
-  for (const auto& line : all_coords_text.split('\n')) {
-    text_width = std::max(text_width, fm.horizontalAdvance(line));
-  }
-  int text_height = fm.height() * all_coords_text.count('\n');
-  int margin = 10;
-
-  // 右上角起点
-  QPointF right_top_pos(width() - text_width - margin, margin*0 + fm.ascent());
-  painter.drawText(QRectF(right_top_pos, QSizeF(text_width, text_height)), 
-                    Qt::AlignLeft | Qt::AlignTop, all_coords_text);
-
-
-  //调用乌龟的绘制函数
-  M_Turtle::iterator it = turtles_.begin();
-  M_Turtle::iterator end = turtles_.end();
-  for (; it != end; ++it) {
-    it->second->paint(painter);
-  }
-
-
-    // 1. 状态栏内容
-    QString status_text = QString("当前AGV数量 %1")
-        .arg(turtles_.size());
-
-    // 2. 状态栏高度
-    int status_height = 24;
-    margin = 8;
-
-    // 3. 绘制底色
-    QRect status_rect(0, height() - status_height, width(), status_height);
-    painter.fillRect(status_rect, QColor(230, 230, 230)); // 浅灰色
-
-    // // 4. 绘制状态栏文字
-    // painter.setPen(Qt::black);
-    // font = painter.font();
-    // font.setPointSize(10);
-    // painter.setFont(font);
-    // painter.drawText(status_rect.adjusted(margin, 0, -margin, 0), Qt::AlignVCenter | Qt::AlignLeft, status_text);
-
-
-  // 按钮参数
-  int button_count = 8;
-  int button_width = 60;
-  int button_height = 20;
-  int button_spacing = 8;
-  int button_top = height() - status_height + 2;
-  int button_left = margin;
-
-  if (button_states_.size() != button_count) button_states_.resize(button_count);
-
-  // 关键：绘制按钮前单独设置按钮字体
-  QFont buttonFont("Monospace");
-  buttonFont.setPointSize(10); // 你想要的按钮字体大小
-  painter.setFont(buttonFont);
-
-  QVector<QRect> button_rects;
-  for (int i = 0; i < button_count; ++i) {
-      QRect btn_rect(button_left + i * (button_width + button_spacing), button_top, button_width, button_height);
-      button_rects.append(btn_rect);
-      //painter.setBrush(QColor(200, 200, 200));
-      painter.setBrush(button_states_[i] ? QColor(120, 220, 120) : QColor(200, 200, 200));
-      painter.setPen(Qt::black);
-      painter.drawRect(btn_rect);
-      painter.drawText(btn_rect, Qt::AlignCenter, QString("No%1").arg(i));
-  }
-  // 保存按钮区域，供鼠标事件用
-  button_rects_ = button_rects; // 你需要在 TurtleFrame 类中加 QVector<QRect> button_rects_ 作为成员变量
-
-
-
-}
 
 void TurtleFrame::updateTurtles()
 {
-
-  
   // 先处理所有乌龟的 Modbus 请求
   for (auto& kv : turtles_) {
     kv.second->process_modbus_requests();
   }
-
   if (last_turtle_update_.nanoseconds() == 0) {
     last_turtle_update_ = nh_->now();
     return;
   }
-
-
   if (path_image_.isNull()) {
     RCLCPP_ERROR(nh_->get_logger(), "path_image_ is null!");
-}
-
+  }
   // 只在这里begin
   if (!path_painter_.isActive()) {
     path_painter_.begin(&path_image_);
   }
-
-
   bool modified = false;
   M_Turtle::iterator it = turtles_.begin();
   M_Turtle::iterator end = turtles_.end();
@@ -610,29 +308,18 @@ void TurtleFrame::updateTurtles()
       height_in_meters_);
       modified |=it->second->highlight_error_;
   }
-
-
     // 只在这里end
   if (path_painter_.isActive()) {
     path_painter_.end();
   }
-
-
-
   if (modified) {
     update();
   }
-
   ++frame_count_;
-
-
-
   for (int i = 0; i < button_states_.size(); ++i) {
       QString name = QString("No%1").arg(i);
       button_states_[i] = hasTurtle(name.toStdString());
   }
-
-
 }
 
 
