@@ -108,14 +108,8 @@ private:
   bool resetCallback(
     const std_srvs::srv::Empty::Request::SharedPtr,
     std_srvs::srv::Empty::Response::SharedPtr);
-  // void spawnCallback(
-  //   const my_turtlesim_msgs::srv::Spawn::Requcest::SharedPtr,
-  //   my_turtlesim_msgs::srv::Spawn::Response::SharedPtr);
-  // void killCallback(
-  //   const my_turtlesim_msgs::srv::Kill::Request::SharedPtr,
-  //   my_turtlesim_msgs::srv::Kill::Response::SharedPtr);
 
-
+  void checkTurtleCollisions();
   void parameterEventCallback(const rcl_interfaces::msg::ParameterEvent::ConstSharedPtr);
 
   std::shared_ptr<rclcpp::executors::MultiThreadedExecutor> executor_;

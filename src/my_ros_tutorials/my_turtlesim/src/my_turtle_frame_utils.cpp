@@ -353,6 +353,34 @@ void TurtleFrame::paintEvent(QPaintEvent * event)
 }
 
 
+void TurtleFrame::checkTurtleCollisions()
+{
+    // 两两遍历所有乌龟
+    for (auto it1 = turtles_.begin(); it1 != turtles_.end(); ++it1) {
+        auto it2 = it1;
+        ++it2;
+        for (; it2 != turtles_.end(); ++it2) {
+            const auto& t1 = it1->second;
+            const auto& t2 = it2->second;
+            if (t1 && t2) {
+                QRectF r1 = t1->getCollisionRect();
+                QRectF r2 = t2->getCollisionRect();
+                if (r1.intersects(r2)) {
+                    // 发生碰撞，可处理
+                    t1->highlight_error_ = true;
+                    t2->highlight_error_ = true;
+
+                    RCLCPP_ERROR(nh_->get_logger(), "乌龟名字: %s 和 %s 发生碰撞! ",
+                        t1->real_name.c_str(), t2->real_name.c_str());
+
+               
+
+                    // 你可以加日志、报警、停止等
+                }
+            }
+        }
+    }
+}
 
 
 }

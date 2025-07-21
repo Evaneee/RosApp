@@ -120,6 +120,11 @@ public:
 public:
     void setPos(double x, double y) { pos_.setX(x); pos_.setY(y); }
     bool highlight_error_ = false;
+    QRectF getCollisionRect() const {
+        // 以乌龟中心为中心，宽高可自定义（如0.8m×0.8m）
+        double w = 3, h = 6;
+        return QRectF(pos_.x() - w/2, pos_.y() - h/2, w, h);
+    }   
 
 
 private:
@@ -155,6 +160,7 @@ private:
   QElapsedTimer error_timer_;
 
   rclcpp::Node::SharedPtr nh_;
+  public:
   std::string real_name; // 新增：保存乌龟名字
   QImage turtle_image_;
   QImage turtle_rotated_image_;

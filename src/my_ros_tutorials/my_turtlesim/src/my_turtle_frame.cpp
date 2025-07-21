@@ -308,7 +308,9 @@ void TurtleFrame::updateTurtles()
       height_in_meters_);
       modified |=it->second->highlight_error_;
   }
-    // 只在这里end
+
+  checkTurtleCollisions();
+
   if (path_painter_.isActive()) {
     path_painter_.end();
   }
@@ -321,6 +323,9 @@ void TurtleFrame::updateTurtles()
       button_states_[i] = hasTurtle(name.toStdString());
   }
 }
+
+
+
 
 
 bool TurtleFrame::clearCallback(
