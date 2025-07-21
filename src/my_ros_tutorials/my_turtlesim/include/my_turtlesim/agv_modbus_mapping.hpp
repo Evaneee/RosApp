@@ -14,12 +14,12 @@ struct AGVGeneral {
     int16_t agvno;
     int16_t targetstation;
     int16_t tasktype;
-    int16_t taskctrl;
-    int16_t speedset_l;
-    int16_t speedset_m;
-    int16_t speedset_h;
-    int16_t nodenum;
-    int16_t agvctrl;
+    int16_t taskctrl;//34
+    int16_t speedset_l;//35
+    int16_t speedset_m;//36
+    int16_t speedset_h;//37
+    int16_t nodenum;//38
+    int16_t agvctrl;//39
     int16_t reserve1, reserve2, reserve3, reserve4, reserve5, reserve6, reserve7, reserve8, reserve9, reserve10;
 };
 

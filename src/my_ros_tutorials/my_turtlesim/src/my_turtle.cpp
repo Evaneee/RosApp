@@ -735,7 +735,7 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
   pos_.rx() += lin_vel_x_ * dt;
   pos_.ry() += lin_vel_y_ * dt;
 
-
+//////////////////////////////////////////////////////////////////////////////////////////////
   //写入到modbus区域，供master读取
   db51_tcp_.Rx_Agv.heartbeat++;
   db51_tcp_.Rx_Agv.agvno   = modbus_port_ - 1502; // 写入乌龟编号
