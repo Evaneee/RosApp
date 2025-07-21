@@ -264,7 +264,12 @@ Turtle::Turtle(
     error_timer_.start();
     RCLCPP_INFO(nh_->get_logger(), "Turtle [%s] 构造完成, action servers处于ready状态", real_name.c_str());
 
-}
+
+    goal_x_ = pos_.x();
+    goal_y_ = pos_.y();
+    goal_theta_ = orient_/PI*180.0;
+
+  }
 
 
 void Turtle::velocityCallback(const geometry_msgs::msg::Twist::ConstSharedPtr vel)
@@ -360,8 +365,6 @@ void Turtle::setOrient(double angle) {
         orient_ = angle;
         rotateImage(); // 旋转后刷新乌龟图像
     }
-
-
 
 /*======================================================================================================================================================================= */
 
