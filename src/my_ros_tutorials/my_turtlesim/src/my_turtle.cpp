@@ -698,6 +698,15 @@ bool Turtle::update(double dt, QPainter & path_painter, const QImage & path_imag
       }
 
 
+      if(db51_tcp_.Tx_Agv.General.reserve1==1)
+      {
+        lin_vel_x_=0;
+        lin_vel_y_=0;
+        ang_vel_=0;
+        RCLCPP_WARN(nh_->get_logger(), "[%s] : 收到急停信号", real_name.c_str());
+      }
+
+
 
       // 发布反馈
       server_walk_absolute_feedback_->remaining = dist;
